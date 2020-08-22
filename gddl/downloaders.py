@@ -48,7 +48,7 @@ def format_bytes(bytes):
     Ripped from https://github.com/rg3/youtube-dl
     """
     if bytes is None:
-        return 'N/A'
+        return '[Unknown Size]'
     if type(bytes) is str:
         bytes = float(bytes)
     if bytes == 0.0:
@@ -75,12 +75,15 @@ class DownloadProgress(object):
         self._current = 0
         self._start = 0
         self._now = 0
+        self._from = 0
 
         self._finished = False
 
-    def start(self):
+    def start(self, from_=0):
         self._now = time.time()
         self._start = self._now
+        self._from = from_
+        self._current = from_
 
     def stop(self):
         self._now = time.time()
@@ -88,14 +91,14 @@ class DownloadProgress(object):
         self._total = self._current
         self.report_progress()
 
-    def read(self, bytes):
+    def read(self, bytes_):
         self._now = time.time()
-        self._current += bytes
+        self._current += bytes_
         self.report_progress()
 
-    def report(self, bytes):
+    def report(self, bytes_):
         self._now = time.time()
-        self._current = bytes
+        self._current = bytes_ + self._from
         self.report_progress()
 
     def calc_percent(self):
@@ -104,24 +107,26 @@ class DownloadProgress(object):
         if self._total == 0:
             return '100% done'
         percentage = int(float(self._current) / float(self._total) * 100.0)
-        done = int(percentage / 2)
-        return '[{0: <50}] {1}%'.format(done * '#', percentage)
+        done = int(percentage / 4)
+        return '[{0: <25}] {1}%'.format(done * '=', percentage)
 
     def calc_speed(self):
         dif = self._now - self._start
-        if self._current == 0 or dif < 0.001:  # One millisecond
+        this_session = self._current - self._from
+        if this_session <= 0 or dif < 0.001:  # One millisecond
             return '---b/s'
-        return '{0}/s'.format(format_bytes(float(self._current) / dif))
+        return '{0}/s'.format(format_bytes(float(this_session) / dif))
 
     def report_progress(self):
         """Report download progress."""
         percent = self.calc_percent()
         total = format_bytes(self._total)
+        done = format_bytes(self._current)
 
         speed = self.calc_speed()
         total_speed_report = '{0} at {1}'.format(total, speed)
 
-        report = '\r{0: <56} {1: >30}'.format(percent, total_speed_report)
+        report = '\r{0: <31} {1} of {2}'.format(percent, done, total_speed_report)
 
         if self._finished:
             print(report)
@@ -192,12 +197,13 @@ class NativeDownloader(Downloader):
                 # if the server returns HTTP code 200 while we are in
                 # resume mode, it means that the server does not support
                 # partial downloads.
+                print('The server is not supporting resume.')
                 resume = False
 
             content_length = r.headers.get('content-length')
             chunk_sz = CHUNK_SIZE
             progress = DownloadProgress(content_length)
-            progress.start()
+            progress.start(filesize if resume else 0)
             f = open(filename, 'ab') if resume else open(filename, 'wb')
             while True:
                 data = r.raw.read(chunk_sz, decode_content=True)
@@ -211,7 +217,7 @@ class NativeDownloader(Downloader):
             return True
 
         if attempts_count == max_attempts:
-            print('Skipping, can\'t download file ...')
+            print('Can\'t download file ...')
             print(error_msg)
             return False
 
