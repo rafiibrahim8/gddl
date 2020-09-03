@@ -10,11 +10,11 @@ pip install gddl
 ```
 You need to have python 3 installed. gddl won't run on python 2.
 # USES
-###### Hiding 'Hello World!' inside infile.mp3. The resultant file is outfile.wav
-#### 
+
 ```sh
-$ gddl https://drive.google.com/open?id=abcde12345
+$ gddl "https://drive.google.com/open?id=abcde12345"
 ```
+*Note: Quotes are required for some urls.*
 
 # DEPENDENCY
   - requests
