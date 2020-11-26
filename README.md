@@ -1,3 +1,7 @@
+[![PyPi Downloads][PyPi-downloads]][PyPi-url]
+[![PyPi Version][PyPi-version]][PyPi-url]
+[![License][License-shield]][License-url]
+
 # gddl
 #### Download files from google drive with resuming capability.
 
@@ -19,3 +23,9 @@ $ gddl "https://drive.google.com/open?id=abcde12345"
 # DEPENDENCY
   - requests
   - urllib3
+
+[PyPi-downloads]: https://img.shields.io/pypi/dm/gddl
+[PyPi-url]: https://pypi.org/project/gddl/
+[License-shield]: https://img.shields.io/github/license/rafiibrahim8/gddl
+[License-url]: https://github.com/rafiibrahim8/gddl/blob/master/LICENSE
+[PyPi-version]: https://img.shields.io/pypi/v/gddl
