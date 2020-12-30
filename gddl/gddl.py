@@ -1,20 +1,33 @@
-from .utils import get_session, get_confirmed_url, get_filename
+from .utils import get_session, get_confirmed_url, get_file_info, get_file_id
 from .downloaders import get_downloader
 from gddl import __version__
 
 import argparse
 
 def download(args):
-    session = get_session()
-    confirmed_url = get_confirmed_url(session, args.url)
-    filename = args.filename if(args.filename) else get_filename(session, confirmed_url)
+    file_id = get_file_id(args.url)
+    if(not file_id):
+        print('The url is invlid.')
+        return
+    
+    api_file_name, api_file_size, error = get_file_info(file_id)
+    if(error):
+        print('Unable to get the file.\nMake sure you have permission and the url is correct.')
+        return
+    filename = args.filename if(args.filename) else api_file_name
     
     if(not filename):
-        print('Unable to get filename from HTTP headers.\n Please re-run the program with -o option.')
-        exit()
+        print('Unable to get filename.\n Please re-run the program with -o option.')
+        return
+       
+    session = get_session()
+    confirmed_url, error_msg = get_confirmed_url(session, file_id)
+    if(error_msg):
+        print('Error:', error_msg)
+        return
     
     downloader = get_downloader(session, args)
-    downloader.download(confirmed_url, filename, args.is_resume)
+    downloader.download(confirmed_url, filename, args.is_resume, api_file_size)
     session.close()
 
 def main():
