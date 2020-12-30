@@ -11,7 +11,7 @@ def read_file(filename,lines=False):
         print('Can not read file:', filename)
         return None
 
-requirements = read_file('requirements.txt', lines=True)
+requirements = read_file('requirements.txt', lines=True) # for some reason this does not work when installing from pypi
 long_description = read_file('README.md')
 
 setup(
@@ -26,7 +26,7 @@ setup(
     url='https://github.com/rafiibrahim8/gddl',
     download_url = 'https://github.com/rafiibrahim8/gddl/archive/v{}.tar.gz'.format(__version__),
 
-    install_requires=requirements,
+    install_requires= ['requests', 'urllib3'],
 
     description='Download files from google drive with resuming capability.',
     long_description=long_description,

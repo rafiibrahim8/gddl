@@ -17,21 +17,21 @@ import requests
 CHUNK_SIZE = 512000
 
 class Downloader(object):
-    def _start_download(self, url, filename, resume):
+    def _start_download(self, url, filename, resume, file_size):
         """
         Actual method to download the given url to the given file.
         This method should be implemented by the subclass.
         """
         raise NotImplementedError("Subclasses should implement this")
 
-    def download(self, url, filename, resume=False):
+    def download(self, url, filename, resume=False, file_size=None):
         """
         Download the given url to the given file. When the download
         is aborted by the user, the partially downloaded file is also removed.
         """
 
         try:
-            self._start_download(url, filename, resume)
+            self._start_download(url, filename, resume, file_size)
         except KeyboardInterrupt as e:
             # keep the file if resume is True
             if not resume:
@@ -126,7 +126,7 @@ class DownloadProgress(object):
         speed = self.calc_speed()
         total_speed_report = '{0} at {1}'.format(total, speed)
 
-        report = '\r{0: <31} {1} of {2}'.format(percent, done, total_speed_report)
+        report = '\r{0: <31} {1} of {2: <28}'.format(percent, done, total_speed_report)
 
         if self._finished:
             print(report)
@@ -145,7 +145,7 @@ class NativeDownloader(Downloader):
     def __init__(self, session):
         self.session = session
 
-    def _start_download(self, url, filename, resume=False):
+    def _start_download(self, url, filename, resume=False, content_length=None):
         # resume has no meaning if the file doesn't exists!
         resume = resume and os.path.exists(filename)
 
@@ -154,7 +154,7 @@ class NativeDownloader(Downloader):
         if resume:
             filesize = os.path.getsize(filename)
             headers['Range'] = 'bytes={}-'.format(filesize)
-            print('Resume downloading {}'.format(filename))
+            print('Resume downloading: {}'.format(filename))
         else:
             print('Downloading {}'.format(filename))
 
@@ -177,18 +177,20 @@ class NativeDownloader(Downloader):
                     print('{} already downloaded'.format(filename))
                     r.close()
                     return True
-                else:
-                    print('%s %s %s' % (r.status_code, url, filesize))
-                    print('Probably the file is missing.')
 
+                elif r.status_code == 403:
+                    print('Error Downloading.\nMaybe the file has been downloaded too many times.\nPlease wait some time and try again.')
+                    return False
+                
+                else:
                     if r.reason:
                         error_msg = r.reason + ' ' + str(r.status_code)
                     else:
                         error_msg = 'HTTP Error ' + str(r.status_code)
 
                     wait_interval = 2 ** (attempts_count + 1)
-                    msg = 'Error downloading, will retry in {0} seconds ...'
-                    print(msg.format(wait_interval))
+                    msg = 'Error downloading ({0}), will retry in {1} seconds ...'
+                    print(msg.format(error_msg, wait_interval))
                     time.sleep(wait_interval)
                     attempts_count += 1
                     continue
@@ -200,7 +202,6 @@ class NativeDownloader(Downloader):
                 print('The server is not supporting resume.')
                 resume = False
 
-            content_length = r.headers.get('content-length')
             chunk_sz = CHUNK_SIZE
             progress = DownloadProgress(content_length)
             progress.start(filesize if resume else 0)
@@ -215,13 +216,12 @@ class NativeDownloader(Downloader):
             f.close()
             r.close()
             return True
-
+        
         if attempts_count == max_attempts:
             print('Can\'t download file ...')
             print(error_msg)
             return False
-
-
+        
 def get_downloader(session, args):
     return NativeDownloader(session)
 

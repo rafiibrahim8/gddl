@@ -3,13 +3,46 @@ import ssl
 import re
 from requests.adapters import HTTPAdapter
 from urllib3.poolmanager import PoolManager
+from html.parser import HTMLParser
+
+GOOGLE_API_URL = 'https://content.googleapis.com/drive/v2/files/'
+GOOGLE_API_PARAMS = {'key': 'AIzaSyAa8yy0GdcGPHdtD083HiGGx_S0vMPScDM'}
+GOOGLE_API_HEADERS = {
+    'X-Origin': 'https://explorer.apis.google.com',
+    'X-Referer': 'https://explorer.apis.google.com'
+}
 
 reg_exs = [
     '^https?://drive.google.com/file/d/([^/]+)',
     'id=([^/&]+)'
 ]
 
-def __get_file_id(url):
+class TitleParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.recording = False
+    
+    def get_title(self):
+        return self.title
+    
+    def handle_starttag(self, tag, attrs):
+        if(tag.lower() == 'title'):
+            self.recording = True
+
+    def handle_endtag(self, tag):
+        if(tag.lower() == 'title'):
+            self.recording = False
+    
+    def handle_data(self, data):
+        if(self.recording):
+            self.title = data
+
+def get_html_title(html_page):
+    title_parser = TitleParser()
+    title_parser.feed(html_page)
+    return title_parser.get_title()
+
+def get_file_id(url):
     for i in reg_exs:
         match = re.findall(i, url)
         if(match):
@@ -17,38 +50,32 @@ def __get_file_id(url):
     
     return None
 
-def __get_direct_url(url):
-    id = __get_file_id(url)
-    if(id==None):
-        print('The entered url is invalid.')
-        exit()
-    else:
-        return 'https://drive.google.com/uc?export=download&id={}'.format(id)
+def __get_direct_url(file_id):
+        return 'https://drive.google.com/uc?export=download&id={}'.format(file_id)
 
-def get_confirmed_url(session, url):
-    url = __get_direct_url(url)
+def get_confirmed_url(session, file_id):
+    url = __get_direct_url(file_id)
     head = session.head(url).headers
 
     if(not head.get('Location')):
         res = session.get(url).content.decode()
         for i in res.split('&amp;'):
             if i.startswith('confirm'):
-                return url+'&'+i
-        return None
+                return url+'&'+i, None
+        return None, get_html_title(res)
     
     else:
-        return url
+        return url, None
 
-def get_filename(session, confirmed_url):    
-    try:
-        print('Getting filename from HTTP headers.')
-        head = session.get(confirmed_url, stream=True).headers
-        for i in head.get('Content-Disposition').split(';'):
-            if(i.startswith('filename=')):
-                return i.split('=')[1].replace('"','')
-    except:
-        return None
+def get_file_info(file_id):
+    res = requests.get(GOOGLE_API_URL + file_id, headers = GOOGLE_API_HEADERS, params=GOOGLE_API_PARAMS).json()
+    if(res.get('error')):
+        return None, None, True
+    file_name = res.get('title')
+    file_size = res.get('fileSize')
+    file_size = int(file_size) if(file_size) else file_size
 
+    return file_name, file_size, False
 
 class TLSAdapter(HTTPAdapter):
     # Copyright (C) 2007 Free Software Foundation
