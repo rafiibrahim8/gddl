@@ -12,7 +12,8 @@ GOOGLE_API_HEADERS = {
     'X-Referer': 'https://explorer.apis.google.com'
 }
 
-reg_exs = [
+# Modified regular expression from: https://github.com/circulosmeos/gdown.pl/blob/master/gdown.pl
+REG_EXs = [
     '^https?://drive.google.com/file/d/([^/]+)',
     'id=([^/&]+)'
 ]
@@ -43,7 +44,7 @@ def get_html_title(html_page):
     return title_parser.get_title()
 
 def get_file_id(url):
-    for i in reg_exs:
+    for i in REG_EXs:
         match = re.findall(i, url)
         if(match):
             return match[0]
@@ -57,15 +58,15 @@ def get_confirmed_url(session, file_id):
     url = __get_direct_url(file_id)
     head = session.head(url).headers
 
-    if(not head.get('Location')):
-        res = session.get(url).content.decode()
-        for i in res.split('&amp;'):
-            if i.startswith('confirm'):
-                return url+'&'+i, None
-        return None, get_html_title(res)
-    
-    else:
-        return url, None
+    location = head.get('Location') or head.get('location')
+    if(location):
+        return location, None
+        
+    res = session.get(url).content.decode()
+    for i in res.split('&amp;'):
+        if i.startswith('confirm'):
+            return url+'&'+i, None
+    return None, get_html_title(res)
 
 def get_file_info(file_id):
     res = requests.get(GOOGLE_API_URL + file_id, headers = GOOGLE_API_HEADERS, params=GOOGLE_API_PARAMS).json()
