@@ -24,6 +24,10 @@ $ gddl "https://drive.google.com/open?id=abcde12345"
   - requests
   - urllib3
 
+# ACKNOWLEDGEMENTS
+  - [gdown.pl](https://github.com/circulosmeos/gdown.pl/) project - for regular expression to extract file id form url.
+  - [coursera-dl](https://github.com/coursera-dl/coursera-dl/) project - for their simple and awesome native downloader.
+
 [PyPi-downloads]: https://img.shields.io/pypi/dm/gddl
 [PyPi-url]: https://pypi.org/project/gddl/
 [License-shield]: https://img.shields.io/github/license/rafiibrahim8/gddl

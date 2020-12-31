@@ -11,7 +11,6 @@ import math
 import os
 import sys
 import time
-
 import requests
 
 CHUNK_SIZE = 512000
@@ -34,13 +33,14 @@ class Downloader(object):
             self._start_download(url, filename, resume, file_size)
         except KeyboardInterrupt as e:
             # keep the file if resume is True
-            if not resume:
-                print('Keyboard Interrupt -- Removing partial file: {}'.format(filename))
+            if resume:
+                print('\nKeyboard Interrupt - Exiting...')
+            else:
+                print('\nKeyboard Interrupt - Removing partial file: {}'.format(filename))
                 try:
                     os.remove(filename)
                 except OSError:
                     pass
-            raise e
 
 def format_bytes(bytes):
     """
@@ -126,7 +126,7 @@ class DownloadProgress(object):
         speed = self.calc_speed()
         total_speed_report = '{0} at {1}'.format(total, speed)
 
-        report = '\r{0: <31} {1} of {2: <28}'.format(percent, done, total_speed_report)
+        report = '\r{0: <31} {1} of {2: <27}'.format(percent, done, total_speed_report)
 
         if self._finished:
             print(report)
