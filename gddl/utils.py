@@ -12,11 +12,7 @@ GOOGLE_API_HEADERS = {
     'X-Referer': 'https://explorer.apis.google.com'
 }
 
-# Modified regular expression from: https://github.com/circulosmeos/gdown.pl/blob/master/gdown.pl
-REG_EXs = [
-    '^https?://drive.google.com/file/d/([^/]+)',
-    'id=([^/&]+)'
-]
+REG_EX = '([0-9A-Za-z_-]{18,})'
 
 class TitleParser(HTMLParser):
     def __init__(self):
@@ -44,11 +40,9 @@ def get_html_title(html_page):
     return title_parser.get_title()
 
 def get_file_id(url):
-    for i in REG_EXs:
-        match = re.findall(i, url)
-        if(match):
-            return match[0]
-    
+    match = re.findall(REG_EX, url)
+    if(match):
+        return match[0]
     return None
 
 def __get_direct_url(file_id):
