@@ -12,21 +12,25 @@ From a command line enter the command to install gddl
 ```
 pip install gddl
 ```
-You need to have python 3 installed. gddl won't run on python 2.
+You need to have python 3 installed. `gddl` won't run on python 2.
 # USES
-
+You can supply a url to `gddl`.
 ```sh
-$ gddl "https://drive.google.com/open?id=abcde12345"
+gddl "https://drive.google.com/file/d/123MyAwesomeFileID/view?usp=sharing"
 ```
 *Note: Quotes are required for some urls.*
 
-# DEPENDENCY
-  - requests
-  - urllib3
+Alternatively, you can download via file ID.
+```sh
+gddl 123MyAwesomeFileID
+```
+# ISSUES
+If you are facing issue using the program, feel free to create an [issue](https://github.com/rafiibrahim8/gddl/issues). 
+
 
 # ACKNOWLEDGEMENTS
-  - [gdown.pl](https://github.com/circulosmeos/gdown.pl/) project - for regular expression to extract file id form url.
   - [coursera-dl](https://github.com/coursera-dl/coursera-dl/) project - for their simple and awesome native downloader.
+  - [gdown.pl](https://github.com/circulosmeos/gdown.pl/) project - for inspiration of creating this program.
 
 [PyPi-downloads]: https://img.shields.io/pypi/dm/gddl
 [PyPi-url]: https://pypi.org/project/gddl/
